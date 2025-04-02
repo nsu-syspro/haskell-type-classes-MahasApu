@@ -174,6 +174,12 @@ instance Parse IExpr where
   parse = ...
 ```
 
+> [!TIP]
+>
+> For simple parsing like in this assignment you can use standard function
+> [words](https://hackage.haskell.org/package/base-4.21.0.0/docs/Prelude.html#v:words)
+> from `Prelude` to split given string by spaces into a list of words.
+
 **Example:**
 
 ```haskell
