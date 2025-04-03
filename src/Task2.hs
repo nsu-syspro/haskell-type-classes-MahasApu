@@ -2,10 +2,12 @@
 -- The above pragma enables all warnings
 
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Task2 where
 
-import Task1 (Parse, Parse(..))
+import Task1 (Parse, Parse(..), tokenize, Stack, Stack(..), pop, push, isDigit, toInteger')
 
 -- * Expression data type
 
@@ -42,7 +44,51 @@ data IntOp = Add | Mul | Sub
 -- Nothing
 --
 instance (Parse a, Parse op) => Parse (Expr a op) where
-  parse = error "TODO: define parse (Parse (Expr a op))"
+  parse x = parse'' (tokenize x)
+
+parse'' :: (Parse a, Parse op) => [String] -> Maybe (Expr a op)
+parse'' tokens = case foldl go (Just (Stack [])) tokens of
+    Just (Stack [val]) -> Just val
+    _                  -> Nothing
+
+  where
+    go :: (Parse a, Parse op) => Maybe (Stack (Expr a op)) -> String -> Maybe (Stack (Expr a op))
+    go (Just stack) token =
+        case parseLit token of
+            Just val -> Just $ push (Lit val) stack
+            Nothing  -> case parseOp token of
+                        Just op -> apply op stack
+                        Nothing -> Just $ push (Var token) stack
+    go _ _ = Nothing
+
+    parseLit :: (Parse a) => String -> Maybe a
+    parseLit = parse
+
+    parseOp :: (Parse op) => String -> Maybe op
+    parseOp = parse
+
+    apply :: op -> Stack (Expr a op) -> Maybe (Stack (Expr a op))
+    apply binOp stack = do
+      (r, stack1) <- pop stack
+      (l, stack2) <- pop stack1
+      Just (push (BinOp binOp l r) stack2)
+
+
+parseInteger :: String -> Maybe Integer
+parseInteger i
+  | isDigit  i  = Just (toInteger' i)
+  | otherwise   = Nothing
+
+instance Parse Integer where
+  parse :: String -> Maybe Integer
+  parse = parseInteger
+
+instance Parse IntOp where
+  parse op = case op of
+    "+" -> Just Add
+    "*" -> Just Mul
+    "-" -> Just Sub
+    _   -> Nothing
 
 -- * Evaluation
 
@@ -50,6 +96,12 @@ instance (Parse a, Parse op) => Parse (Expr a op) where
 class Eval a op where
   -- | Evaluates given binary operation with provided arguments
   evalBinOp :: op -> a -> a -> a
+
+instance Eval Integer IntOp where
+  evalBinOp op = case op of
+    Add -> (+)
+    Mul -> (*)
+    Sub -> (-)
 
 -- | Evaluates given 'Expr' using given association list of variable values
 --
@@ -65,7 +117,13 @@ class Eval a op where
 -- Nothing
 --
 evalExpr :: (Eval a op) => [(String, a)] -> Expr a op -> Maybe a
-evalExpr = error "TODO: define evalExpr"
+evalExpr _    (Lit i) = Just i
+evalExpr vars (Var v) = lookup v vars 
+evalExpr vars (BinOp op l r) = do
+    left  <- evalExpr vars l  
+    right <- evalExpr vars r
+    Just (evalBinOp op left right)  
+
 
 -- | Parses given integer expression in Reverse Polish Notation and evaluates it
 -- using given association list of variable values
@@ -89,7 +147,9 @@ evalExpr = error "TODO: define evalExpr"
 -- Nothing
 --
 evaluateInteger :: [(String, Integer)] -> String -> Maybe Integer
-evaluateInteger = error "TODO: define evaluateInteger"
+evaluateInteger vars s  = case parse s :: Maybe (Expr Integer IntOp) of
+  Just e  -> evalExpr vars e
+  Nothing -> Nothing
 
 -- | Parses given expression in Reverse Polish Notation and evaluates it
 -- using given association list of variable values
@@ -114,3 +174,6 @@ type Reify a op = Expr a op -> Expr a op
 -- | Helper for specifying 'Expr' with 'Integer' and 'IntOp' in generic context
 reifyInteger :: Reify Integer IntOp
 reifyInteger = id
+
+
+

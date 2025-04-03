@@ -41,8 +41,8 @@ evalIExpr (Mul l r) = evalIExpr l * evalIExpr r
 tokenize :: String -> [String]
 tokenize = words
 
-toInteger :: String -> Integer
-toInteger = read
+toInteger' :: String -> Integer
+toInteger' = read
 
 isDigit :: String -> Bool
 isDigit = all (\ c -> c `elem` ['0' .. '9'])
@@ -99,13 +99,13 @@ parse' tokens = case foldl go (Just (Stack [])) tokens of
       "+"   -> apply Add stack
       "*"   -> apply Mul stack 
       val   -> if   isDigit val 
-               then Just $ push (Lit (toInteger val)) stack
+               then Just $ push (Lit (toInteger' val)) stack
                else Nothing
     go _ _   = Nothing
 
     apply :: (IExpr -> IExpr -> IExpr) -> Stack IExpr -> Maybe (Stack IExpr)
-    apply binOp sstack = do 
-      (r, stack1) <- pop sstack
+    apply binOp stack = do 
+      (r, stack1) <- pop stack
       (l, stack2) <- pop stack1
       Just (push (binOp l r) stack2)
 
