@@ -44,7 +44,7 @@ data IntOp = Add | Mul | Sub
 -- Nothing
 --
 instance (Parse a, Parse op) => Parse (Expr a op) where
-  parse x = parse'' (tokenize x)
+  parse  = parse'' . tokenize 
 
 parse'' :: (Parse a, Parse op) => [String] -> Maybe (Expr a op)
 parse'' tokens = case foldl go (Just (Stack [])) tokens of
@@ -162,7 +162,7 @@ evaluateInteger vars s  = case parse s :: Maybe (Expr Integer IntOp) of
 --
 evaluate :: (Eval a op, Parse a, Parse op) => Reify a op -> [(String, a)] -> String -> Maybe a
 evaluate reify m s = case parse s of
-  Just e -> evalExpr m (reify e)
+  Just e  -> evalExpr m (reify e)
   Nothing -> Nothing
 
 -- * Helpers
