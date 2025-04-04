@@ -1,7 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
 -- The above pragma enables all warnings
 
+
 module Task1 where
+
+import Prelude (Integer, Show, String, Maybe (Just, Nothing), words, (*), (+), (.), read, Foldable (elem, foldl), Functor(fmap), Bool, ($), all)
 
 -- * Expression data type
 
@@ -28,7 +31,34 @@ data IExpr =
 -- 9
 --
 evalIExpr :: IExpr -> Integer
-evalIExpr = error "TODO: define evalIExpr"
+evalIExpr (Lit i)   = i
+evalIExpr (Add l r) = evalIExpr l + evalIExpr r
+evalIExpr (Mul l r) = evalIExpr l * evalIExpr r
+
+
+-- * Lexical part and some utils
+
+tokenize :: String -> [String]
+tokenize = words
+
+toInteger' :: String -> Integer
+toInteger' = read
+
+isDigit :: String -> Bool
+isDigit = all (\ c -> c `elem` ['0' .. '9'])
+
+-- * Stack for Reverse Polish Notation
+
+newtype Stack a = Stack [a]
+  deriving (Show)
+
+push :: a -> Stack a -> Stack a
+push x (Stack xs) = Stack (x : xs)
+
+pop :: Stack a -> Maybe (a, Stack a)
+pop (Stack (x : xs)) = Just (x, Stack xs)
+pop  _               = Nothing
+
 
 -- * Parsing
 
@@ -55,7 +85,30 @@ class Parse a where
 -- Nothing
 --
 instance Parse IExpr where
-  parse = error "TODO: define parse (Parse IExpr)"
+  parse = parse' . tokenize
+
+
+parse' :: [String] -> Maybe IExpr
+parse' tokens = case foldl go (Just (Stack [])) tokens of
+    Just (Stack [val]) -> Just val  
+    _                  -> Nothing
+
+  where 
+    go :: Maybe (Stack IExpr) -> String -> Maybe (Stack IExpr)
+    go (Just stack) token = case token of
+      "+"   -> apply Add stack
+      "*"   -> apply Mul stack 
+      val   -> if   isDigit val 
+               then Just $ push (Lit (toInteger' val)) stack
+               else Nothing
+    go _ _   = Nothing
+
+    apply :: (IExpr -> IExpr -> IExpr) -> Stack IExpr -> Maybe (Stack IExpr)
+    apply binOp stack = do 
+      (r, stack1) <- pop stack
+      (l, stack2) <- pop stack1
+      Just (push (binOp l r) stack2)
+
 
 -- * Evaluation with parsing
 
@@ -75,6 +128,6 @@ instance Parse IExpr where
 -- Nothing
 -- >>> evaluateIExpr "2 3"
 -- Nothing
---
+
 evaluateIExpr :: String -> Maybe Integer
-evaluateIExpr = error "TODO: define evaluateIExpr"
+evaluateIExpr = fmap evalIExpr . parse

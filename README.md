@@ -1,3 +1,4 @@
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/e37apZAv)
 # Haskell: Type classes
 
 <img alt="points bar" align="right" height="36" src="../../blob/badges/.github/badges/points-bar.svg" />
@@ -172,6 +173,12 @@ representing addition and multiplication respectively.
 instance Parse IExpr where
   parse = ...
 ```
+
+> [!TIP]
+>
+> For simple parsing like in this assignment you can use standard function
+> [words](https://hackage.haskell.org/package/base-4.21.0.0/docs/Prelude.html#v:words)
+> from `Prelude` to split given string by spaces into a list of words.
 
 **Example:**
 
