@@ -54,7 +54,7 @@ possibleSet _           = Nothing
 -- >>> extractVars $ tokenize "x y xor x y and or"
 -- Just ["x","y"]
 extractVars :: [String] -> Maybe [String]
-extractVars s = Just (nub (filter (`notElem` ["and", "or", "xor"]) s))
+extractVars s = Just $ nub $ filter (`notElem` ["and", "or", "xor"]) s
 
 
 instance Parse Bool where
@@ -83,5 +83,4 @@ solve tokens = do
   exprs   <- parse'' tokens :: Maybe (Expr Bool BoolOp)
   vars    <- extractVars tokens  
   sets    <- possibleSet (Just vars)
-  let res  = mapMaybe (`evalExpr` exprs) sets  
-  Just (or res)
+  Just (or $ mapMaybe (`evalExpr` exprs) sets)
