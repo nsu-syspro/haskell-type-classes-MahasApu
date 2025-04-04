@@ -33,7 +33,8 @@ import Data.List (nub)
 -- Just True
 -- >>> solveSAT "x xor"
 -- Nothing
---
+-- >>> solveSAT "z x xor"
+-- Just True
 
 solveSAT :: String -> Maybe Bool
 solveSAT = solve . tokenize
@@ -45,10 +46,10 @@ comprehend xs ys = [(x, y) | x <- xs, y <- ys]
 
 
 -- >>> possibleSet $ extractVars $ tokenize "x y xor x y and or"
--- Just [[("x",True),("x",False),("y",True),("y",False)]]
+-- Just [[("x",False),("y",False)],[("x",False),("y",True)],[("x",True),("y",False)],[("x",True),("y",True)]]
 possibleSet :: Maybe [String] -> Maybe [[(String, Bool)]]
-possibleSet (Just vars) = Just [comprehend vars [True, False]]
-possibleSet _ = Nothing
+possibleSet (Just vars) = Just $ sequence [comprehend [v] [False, True] | v <- vars]
+possibleSet _           = Nothing
 
 -- >>> extractVars $ tokenize "x y xor x y and or"
 -- Just ["x","y"]
